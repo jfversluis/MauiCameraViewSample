@@ -5,12 +5,35 @@ namespace MauiCameraViewSample
 {
     public partial class MainPage : ContentPage
     {
-        public MainPage()
+        private ICameraProvider cameraProvider;
+
+        public MainPage(ICameraProvider cameraProvider)
         {
             InitializeComponent();
+
+            this.cameraProvider = cameraProvider;
         }
 
-        private void MyCamera_MediaCaptured(object sender, CommunityToolkit.Maui.Views.MediaCapturedEventArgs e)
+        // Implemented as a follow up video https://youtu.be/JUdfA7nFdWw
+        protected async override void OnNavigatedTo(NavigatedToEventArgs args)
+        {
+            base.OnNavigatedTo(args);
+            
+            await cameraProvider.RefreshAvailableCameras(CancellationToken.None);
+            MyCamera.SelectedCamera = cameraProvider.AvailableCameras
+                .Where(c => c.Position == CameraPosition.Front).FirstOrDefault();
+        }
+
+        // Implemented as a follow up video https://youtu.be/JUdfA7nFdWw
+        protected override void OnNavigatedFrom(NavigatedFromEventArgs args)
+        {
+            base.OnNavigatedFrom(args);
+
+            MyCamera.MediaCaptured -= MyCamera_MediaCaptured;
+            MyCamera.Handler?.DisconnectHandler();
+        }
+
+        private void MyCamera_MediaCaptured(object? sender, CommunityToolkit.Maui.Views.MediaCapturedEventArgs e)
         {
             if (Dispatcher.IsDispatchRequired)
             {
